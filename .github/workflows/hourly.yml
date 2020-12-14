@@ -1,0 +1,21 @@
+name: Hourly Update
+
+on:
+  push:
+    branches:
+      - master
+  schedule:
+    # Hourly
+    - cron: "0 * * * *"
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js 14.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14.x
+      - run: npm install
+      - run: node index.js
