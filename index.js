@@ -4,8 +4,8 @@ const { paginateRest } = require("@octokit/plugin-paginate-rest");
 require("dotenv").config();
 
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(
-  process.env.AIRTABLE_BASE
-)("Github Issues");
+  process.env.AIRTABLE_BASE_ID
+)(process.env.AIRTABLE_TABLE_ID);
 const octokit = new (Octokit.plugin(paginateRest))({
   auth: process.env.GH_API_TOKEN,
 });
@@ -13,7 +13,7 @@ const octokit = new (Octokit.plugin(paginateRest))({
 async function main() {
   const issueNumberToRecord = {};
   await base
-    .select({ view: "Ground Truth", fields: ["Number"] })
+    .select({ view: "Ingest (do not edit)", fields: ["Number"] })
     .eachPage((records, fetchNextPage) => {
       records.forEach((record) => {
         issueNumberToRecord[record.get("Number")] = record.getId();
@@ -25,12 +25,15 @@ async function main() {
   );
 
   const githubIssues = {};
+  let dateAfter = new Date();
+  dateAfter.setDate(dateAfter.getDate() - 14);
   for await (const response of octokit.paginate.iterator(
     "GET /repos/{owner}/{repo}/issues",
     {
       owner: "ray-project",
       repo: "ray",
-      labels: ["serve"],
+      since: dateAfter.toISOString(),
+      labels: ["bug"],
       per_page: 100,
       state: "all",
       pull_request: false,
